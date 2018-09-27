@@ -17,16 +17,11 @@ type Promise struct {
 }
 
 func (promise *Promise) Then(onFulfilled func(value interface{}) interface{}) *Promise {
-	return promise.then(onFulfilled, nil)
+	return promise.thenInternal(onFulfilled, nil)
 }
 
 func (promise *Promise) Catch(onRejected func(reason interface{}) interface{}) *Promise {
-	return promise.then(nil, onRejected)
-}
-
-func (promise *Promise) Done(onFulfilled func(value interface{}), onRejected func(reason interface{})) {
-	handler := NewHandler(onFulfilled, onRejected)
-	promise.executeHandler(handler)
+	return promise.thenInternal(nil, onRejected)
 }
 
 func (promise *Promise) Await() interface{} {
@@ -34,7 +29,7 @@ func (promise *Promise) Await() interface{} {
 	wg.Add(1)
 	var result interface{} = nil
 	success := false
-	promise.then(func(value interface{}) interface{} {
+	promise.thenInternal(func(value interface{}) interface{} {
 		result = value
 		success = true
 		return value
@@ -55,7 +50,13 @@ func (promise *Promise) Await() interface{} {
 	return result
 }
 
-func (promise *Promise) then(onFulfilled func(value interface{}) interface{}, onRejected func(reason interface{}) interface{}) *Promise {
+
+func (promise *Promise) done(onFulfilled func(value interface{}), onRejected func(reason interface{})) {
+	handler := NewHandler(onFulfilled, onRejected)
+	go promise.executeHandler(handler)
+}
+
+func (promise *Promise) thenInternal(onFulfilled func(value interface{}) interface{}, onRejected func(reason interface{}) interface{}) *Promise {
 	return New(func(resolve, reject func(interface{})) {
 		defer func() {
 			err := recover()
@@ -63,7 +64,7 @@ func (promise *Promise) then(onFulfilled func(value interface{}) interface{}, on
 				reject(err)
 			}
 		}()
-		promise.Done(func(result interface{}) {
+		promise.done(func(result interface{}) {
 			makeFulfillChain(result, onFulfilled, onRejected, resolve, reject)
 		}, func(reason interface{}) {
 			makeRejectChain(reason, onFulfilled, onRejected, resolve, reject)

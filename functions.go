@@ -2,7 +2,7 @@ package promise
 
 func New(resolver func(resolve, reject func(interface{}))) *Promise {
 	p := &Promise{pending, nil, make([]*Handler, 0)}
-	doResolve(resolver, p.resolve, p.reject)
+	go doResolve(resolver, p.resolve, p.reject)
 	return p
 }
 
@@ -51,7 +51,7 @@ func All(promises ...*Promise) *Promise {
 		})
 	}
 
-	return ready.then(func(_ interface{}) interface{} {
+	return ready.thenInternal(func(_ interface{}) interface{} {
 		return accumulator
 	}, nil)
 }
@@ -60,7 +60,7 @@ func Race(promises ...*Promise) *Promise {
 	return New(func(resolve func(interface{}), reject func(interface{})) {
 		for _, promise := range promises {
 			promise := promise
-			promise.then(func(value interface{}) interface{} {
+			promise.thenInternal(func(value interface{}) interface{} {
 				resolve(value)
 				return value
 			}, func(reason interface{}) interface{} {
@@ -118,7 +118,7 @@ func getThen(value interface{}) (func(onFulfilled, onRejected func(reason interf
 				}
 				return nil
 			}
-			promise.then(resolve, reject)
+			promise.thenInternal(resolve, reject)
 		}, true
 	}
 
@@ -132,7 +132,7 @@ func isPromise(value interface{}) bool {
 
 func makeFulfillChain(result interface{}, onFulfilled func(value interface{}) interface{}, onRejected func(reason interface{}) interface{}, resolve func(interface{}), reject func(interface{})) {
 	if isPromise(result) {
-		result.(*Promise).Done(func(value interface{}) {
+		result.(*Promise).done(func(value interface{}) {
 			makeFulfillChain(value, onFulfilled, onRejected, resolve, reject)
 		}, func(reason interface{}) {
 			makeRejectChain(reason, onFulfilled, onRejected, resolve, reject)
@@ -150,7 +150,7 @@ func makeFulfillChain(result interface{}, onFulfilled func(value interface{}) in
 
 func makeRejectChain(reason interface{}, onFulfilled func(value interface{}) interface{}, onRejected func(reason interface{}) interface{}, resolve func(interface{}), reject func(interface{})) {
 	if isPromise(reason) {
-		reason.(*Promise).Done(func(value interface{}) {
+		reason.(*Promise).done(func(value interface{}) {
 			makeFulfillChain(reason, onFulfilled, onRejected, resolve, reject)
 		}, func(reason interface{}) {
 			makeRejectChain(reason, onFulfilled, onRejected, resolve, reject)
