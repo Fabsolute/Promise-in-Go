@@ -8,14 +8,31 @@
 The basic usage is to just do 
 
 ```go
-response := promise.New(func(resolve, reject func(interface{})) {
-  time.Sleep(2 * time.Second)
-  resolve(2)
-}).Then(func(value interface{}) interface{} {
-  return value.(int) + 4
-}).Then(func(value interface{}) interface{} {
-  return "This message has " + strconv.Itoa(value.(int)) + " words."
-}).Await()
+// create file main.go
+package main
 
-fmt.Println(response)
+import (
+       promise "github.com/fabsolute/promise-in-go"
+       "fmt"
+       "time"
+       "strconv"
+       )
+func main(){
+  response := promise.New(func(resolve, reject func(interface{})) {
+    time.Sleep(2 * time.Second)
+    resolve(2)
+  }).Then(func(value interface{}) interface{} {
+    return value.(int) + 4
+  }).Then(func(value interface{}) interface{} {
+    return "This message has " + strconv.Itoa(value.(int)) + " words."
+  }).Await()
+
+  fmt.Println(response)
+}
 ```
+Execute
+```go run main.go```
+
+You will see
+
+```This message has 6 words.```
