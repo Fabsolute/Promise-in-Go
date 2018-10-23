@@ -12,22 +12,23 @@ The basic usage is to just do
 package main
 
 import (
-       promise "github.com/fabsolute/promise-in-go"
-       "fmt"
-       "time"
-       "strconv"
-       )
-func main(){
-  response := promise.New(func(resolve, reject func(interface{})) {
-    time.Sleep(2 * time.Second)
-    resolve(2)
-  }).Then(func(value interface{}) interface{} {
-    return value.(int) + 4
-  }).Then(func(value interface{}) interface{} {
-    return "This message has " + strconv.Itoa(value.(int)) + " words."
-  }).Await()
+	"fmt"
+	"github.com/fabsolute/promise-in-go"
+	"strconv"
+	"time"
+)
 
-  fmt.Println(response)
+func main() {
+	response := promise.New(func(resolve, reject func(interface{})) {
+		time.Sleep(2 * time.Second)
+		resolve(2)
+	}).Then(func(value interface{}) interface{} {
+		return value.(int) + 4
+	}).Then(func(value interface{}) interface{} {
+		return "This message has " + strconv.Itoa(value.(int)) + " words."
+	}).Await()
+
+	fmt.Println(response)
 }
 ```
 Execute
